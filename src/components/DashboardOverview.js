@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DeviceModel from '../models/DeviceModel'; // Importar el modelo de dispositivo
+import DashboardMap from './DashboardMap'; // Import the new map component
 
 const DashboardOverview = ({ dashboardController = null }) => {
   const [deviceData, setDeviceData] = useState(null);
@@ -45,12 +46,8 @@ const DashboardOverview = ({ dashboardController = null }) => {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-md mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">Ubicación del Dispositivo</h2>
-        <p className="text-2xl font-bold text-black">{deviceData.location}</p>
-        <div className="mt-4 h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-          {/* Placeholder for a map */}
-          Mapa aquí
-        </div>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Ubicación de Dispositivos</h2>
+        <DashboardMap />
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-md">
