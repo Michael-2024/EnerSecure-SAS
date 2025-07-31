@@ -4,11 +4,9 @@ import DashboardOverview from './DashboardOverview';
 import DashboardStatistics from './DashboardStatistics';
 import DashboardBilling from './DashboardBilling';
 import DashboardSettings from './DashboardSettings';
-import DashboardController from '../controllers/DashboardController'; // Importar el controlador
 
-const DashboardPage = ({ onLogout = () => {} }) => {
+const DashboardPage = ({ onLogout = () => {}, dashboardController = null }) => {
   const [currentPage, setCurrentPage] = useState('overview');
-  const dashboardController = new DashboardController(); // Instanciar el controlador
 
   const handleNavigate = (page) => {
     if (page === 'logout') {
@@ -34,9 +32,19 @@ const DashboardPage = ({ onLogout = () => {} }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <DashboardSidebar onNavigate={handleNavigate} currentPage={currentPage} />
-      {renderContent()}
+    <div className="min-h-screen w-full bg-black flex" style={{ minHeight: '100vh', height: '100vh' }}>
+      {/* Sidebar */}
+      <div className="flex-shrink-0">
+        <DashboardSidebar 
+          onNavigate={handleNavigate} 
+          currentPage={currentPage}
+        />
+      </div>
+      
+      {/* Contenido principal */}
+      <div className="flex-1 bg-black overflow-y-auto min-h-screen" style={{ minHeight: '100vh', height: '100vh' }}>
+        {renderContent()}
+      </div>
     </div>
   );
 };

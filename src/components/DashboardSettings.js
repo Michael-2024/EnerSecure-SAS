@@ -8,6 +8,21 @@ const DashboardSettings = ({ dashboardController = null }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Estados para los modales
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    type: 'success', // 'success', 'error', 'warning'
+    onConfirm: null
+  });
+
+  // Función para mostrar modal
+  const showNotification = (title, message, type = 'success', onConfirm = null) => {
+    setModalConfig({ title, message, type, onConfirm });
+    setShowModal(true);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -43,40 +58,209 @@ const DashboardSettings = ({ dashboardController = null }) => {
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
-    if (dashboardController) {
-      const success = await dashboardController.updateProfile(name, email);
-      if (success) {
-        alert('Perfil actualizado con éxito.');
-      } else {
-        alert('Error al actualizar el perfil.');
+    
+    // Modal de confirmación antes de guardar
+    showNotification(
+      '¿Confirmar cambios?',
+      '¿Estás seguro de que deseas actualizar tu información personal?',
+      'warning',
+      async () => {
+        if (dashboardController) {
+          const success = await dashboardController.updateProfile(name, email);
+          if (success) {
+            showNotification(
+              '¡Éxito!',
+              'Tu perfil ha sido actualizado correctamente.',
+              'success'
+            );
+          } else {
+            showNotification(
+              'Error',
+              'No se pudo actualizar tu perfil. Inténtalo de nuevo.',
+              'error'
+            );
+          }
+        } else {
+          // Simulación para datos de prueba
+          showNotification(
+            '¡Éxito!',
+            'Tu perfil ha sido actualizado correctamente (modo demo).',
+            'success'
+          );
+        }
       }
-    } else {
-      // Simulación para datos de prueba
-      alert('Perfil actualizado con éxito (modo demo).');
-    }
+    );
   };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (password === confirmPassword && password.length >= 6) {
-      if (dashboardController) {
-        const success = await dashboardController.changePassword(password);
-        if (success) {
-          alert('Contraseña cambiada con éxito.');
+    
+    if (password !== confirmPassword) {
+      showNotification(
+        'Error de validación',
+        'Las contraseñas no coinciden. Por favor, verifica que ambas contraseñas sean idénticas.',
+        'error'
+      );
+      return;
+    }
+    
+    if (password.length < 6) {
+      showNotification(
+        'Contraseña muy corta',
+        'La contraseña debe tener al menos 6 caracteres.',
+        'error'
+      );
+      return;
+    }
+
+    // Modal de confirmación antes de cambiar contraseña
+    showNotification(
+      '¿Cambiar contraseña?',
+      '¿Estás seguro de que deseas cambiar tu contraseña? Esta acción no se puede deshacer.',
+      'warning',
+      async () => {
+        if (dashboardController) {
+          const success = await dashboardController.changePassword(password);
+          if (success) {
+            showNotification(
+              '¡Contraseña actualizada!',
+              'Tu contraseña ha sido cambiada exitosamente.',
+              'success'
+            );
+            setPassword('');
+            setConfirmPassword('');
+          } else {
+            showNotification(
+              'Error',
+              'No se pudo cambiar la contraseña. Inténtalo de nuevo.',
+              'error'
+            );
+          }
+        } else {
+          // Simulación para datos de prueba
+          showNotification(
+            '¡Contraseña actualizada!',
+            'Tu contraseña ha sido cambiada exitosamente (modo demo).',
+            'success'
+          );
           setPassword('');
           setConfirmPassword('');
-        } else {
-          alert('Error al cambiar la contraseña.');
         }
-      } else {
-        // Simulación para datos de prueba
-        alert('Contraseña cambiada con éxito (modo demo).');
-        setPassword('');
-        setConfirmPassword('');
       }
-    } else {
-      alert('Las contraseñas no coinciden o son muy cortas (mínimo 6 caracteres).');
-    }
+    );
+  };
+
+  // Componente Modal personalizado
+  const Modal = () => {
+    if (!showModal) return null;
+
+    const getModalIcon = () => {
+      switch (modalConfig.type) {
+        case 'success':
+          return '✅';
+        case 'error':
+          return '❌';
+        case 'warning':
+          return '⚠️';
+        default:
+          return 'ℹ️';
+      }
+    };
+
+    const getModalColors = () => {
+      switch (modalConfig.type) {
+        case 'success':
+          return {
+            border: 'border-green-500/50',
+            bg: 'bg-green-500/10',
+            text: 'text-green-400',
+            buttonPrimary: 'bg-green-600 hover:bg-green-700',
+            buttonSecondary: 'bg-gray-600 hover:bg-gray-700'
+          };
+        case 'error':
+          return {
+            border: 'border-red-500/50',
+            bg: 'bg-red-500/10',
+            text: 'text-red-400',
+            buttonPrimary: 'bg-red-600 hover:bg-red-700',
+            buttonSecondary: 'bg-gray-600 hover:bg-gray-700'
+          };
+        case 'warning':
+          return {
+            border: 'border-yellow-500/50',
+            bg: 'bg-yellow-500/10',
+            text: 'text-yellow-400',
+            buttonPrimary: 'bg-yellow-600 hover:bg-yellow-700',
+            buttonSecondary: 'bg-gray-600 hover:bg-gray-700'
+          };
+        default:
+          return {
+            border: 'border-blue-500/50',
+            bg: 'bg-blue-500/10',
+            text: 'text-blue-400',
+            buttonPrimary: 'bg-blue-600 hover:bg-blue-700',
+            buttonSecondary: 'bg-gray-600 hover:bg-gray-700'
+          };
+      }
+    };
+
+    const colors = getModalColors();
+
+    return (
+      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className={`bg-gray-900 border ${colors.border} rounded-xl shadow-2xl max-w-md w-full mx-4 transform animate-pulse`}>
+          {/* Header del modal */}
+          <div className={`${colors.bg} p-6 rounded-t-xl border-b ${colors.border}`}>
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">{getModalIcon()}</span>
+              <h3 className={`text-xl font-bold ${colors.text}`}>
+                {modalConfig.title}
+              </h3>
+            </div>
+          </div>
+          
+          {/* Contenido del modal */}
+          <div className="p-6">
+            <p className="text-gray-300 text-sm leading-relaxed mb-6">
+              {modalConfig.message}
+            </p>
+            
+            {/* Botones */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              {modalConfig.onConfirm ? (
+                <>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className={`${colors.buttonSecondary} text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center`}
+                  >
+                    <span className="mr-2">❌</span>
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      modalConfig.onConfirm();
+                    }}
+                    className={`${colors.buttonPrimary} text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center`}
+                  >
+                    <span className="mr-2">✅</span>
+                    Confirmar
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowModal(false)}
+                  className={`${colors.buttonPrimary} text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center w-full`}
+                >
+                  <span className="mr-2">👍</span>
+                  Entendido
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Componente de carga
@@ -155,7 +339,7 @@ const DashboardSettings = ({ dashboardController = null }) => {
             
             <button
               type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-green-500/20 transition-all duration-300 flex items-center"
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-green-500/20 transition-all duration-300 flex items-center hover:scale-105"
             >
               <span className="mr-2">💾</span>
               Guardar Cambios
@@ -220,7 +404,7 @@ const DashboardSettings = ({ dashboardController = null }) => {
             
             <button
               type="submit"
-              className="bg-yellow-600 hover:bg-yellow-700 text-black px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-yellow-500/20 transition-all duration-300 flex items-center"
+              className="bg-yellow-600 hover:bg-yellow-700 text-black px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-yellow-500/20 transition-all duration-300 flex items-center hover:scale-105"
               disabled={!password || !confirmPassword || password !== confirmPassword || password.length < 6}
             >
               <span className="mr-2">🔐</span>
@@ -264,6 +448,9 @@ const DashboardSettings = ({ dashboardController = null }) => {
         </section>
         
       </div>
+      
+      {/* Modal Component */}
+      <Modal />
     </div>
   );
 };

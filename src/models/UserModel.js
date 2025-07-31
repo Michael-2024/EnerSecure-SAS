@@ -10,8 +10,8 @@ class UserModel {
   static async fetchUser(email, password) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        if (email === 'user@example.com' && password === 'password') {
-          resolve(new UserModel({ email: 'user@example.com', password: 'password', name: 'Usuario Demo' }));
+        if (email === 'juan.perez@example.com' && password === 'secure123') {
+          resolve(new UserModel({ email: 'juan.perez@example.com', password: 'secure123', name: 'Juan Perez' }));
         } else {
           reject(new Error('Credenciales incorrectas'));
         }

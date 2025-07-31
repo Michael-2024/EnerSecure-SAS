@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { authService } from '../services/authService';
+import UserModel from '../models/UserModel';
 
 const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -11,135 +11,115 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    
     try {
-      const result = await authService.login(email, password);
-      
-      if (result.success) {
-        // Login exitoso
-        console.log('Login exitoso:', result.user);
-        onLogin(result.user); // Pasar datos del usuario al componente padre
-      } else {
-        // Login fallido
-        setError(result.error || 'Error al iniciar sesión');
+      const user = await UserModel.fetchUser(username, password);
+      if (user) {
+        onLogin(user);
       }
-    } catch (error) {
-      setError('Error de conexión. Verifica que el servidor esté ejecutándose.');
-      console.error('Error:', error);
+    } catch (err) {
+      setError(err.message || 'Error de conexión. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-green-500/30 p-8 rounded-xl shadow-2xl shadow-green-500/20 w-full max-w-md">
-        <div className="text-center mb-8">
-          {/* Logo */}
-          <div className="mb-6 flex justify-center">
-            <img 
-              src="/logo_enersecure.png" 
-              alt="EnerSecure S.A.S. Logo" 
-              className="w-20 h-20 object-contain hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-          
-          <h2 className="text-4xl font-bold text-white mb-2">
-            <span className="text-green-400">Iniciar</span> Sesión
-          </h2>
-          <p className="text-gray-400">Accede a tu panel de energía renovable</p>
-        </div>
+    <div className="min-h-screen w-full bg-black flex items-center justify-center p-4" style={{ minHeight: '100vh' }}>
+      <div className="max-w-md w-full space-y-8">
         
-        {error && (
-          <div className="bg-red-900/30 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 flex items-center">
-            <span className="mr-2">⚠️</span>
-            {error}
+        {/* Logo y título */}
+        <div className="text-center">
+          <div className="mx-auto mb-6 flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-2xl">
+              <span className="text-black font-bold text-2xl">🔋</span>
+            </div>
           </div>
-        )}
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            <span className="text-green-400">Ener</span>Secure
+          </h1>
+          <p className="text-gray-400 text-sm sm:text-base">Panel de Control de Energía Renovable</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-lg font-medium text-green-400 mb-2">
-              📧 Correo Electrónico
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-green-400 focus:border-green-400 transition duration-200"
-              placeholder="juan.perez@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
+        {/* Formulario de login */}
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 p-6 sm:p-8 rounded-xl shadow-2xl">
+            <div className="space-y-4">
+              
+              {/* Campo Usuario */}
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+                  Usuario
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200"
+                  placeholder="Ingresa tu usuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+
+              {/* Campo Contraseña */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200"
+                  placeholder="Ingresa tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+
+              {/* Mensaje de error */}
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Botón de login */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-lg font-semibold shadow-lg hover:from-green-600 hover:to-green-700 focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Iniciando sesión...
+                  </div>
+                ) : (
+                  'Iniciar Sesión'
+                )}
+              </button>
+            </div>
           </div>
-          
-          <div>
-            <label htmlFor="password" className="block text-lg font-medium text-green-400 mb-2">
-              🔒 Contraseña
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-green-400 focus:border-green-400 transition duration-200"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full px-6 py-3 rounded-lg text-lg font-semibold shadow-lg transition-all duration-300 transform ${
-              loading 
-                ? 'bg-gray-600 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-green-500 to-yellow-500 text-black hover:from-green-400 hover:to-yellow-400 hover:scale-105'
-            }`}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Iniciando sesión...
-              </span>
-            ) : (
-              '🚀 Acceder'
-            )}
-          </button>
         </form>
 
-        <div className="mt-8 text-center space-y-4">
-          <p className="text-gray-400">
-            ¿No tienes cuenta?{' '}
-            <button 
-              onClick={() => onNavigate('register')} 
-              className="text-yellow-400 font-medium hover:text-yellow-300 transition-colors duration-200"
-            >
-              Registrarse aquí
-            </button>
-          </p>
-          
-          <button 
-            onClick={() => onNavigate('home')} 
-            className="text-gray-500 hover:text-gray-300 transition-colors duration-200 flex items-center justify-center mx-auto"
-          >
-            ← Regresar al Inicio
-          </button>
+        {/* Información de prueba */}
+        <div className="bg-gray-900/50 border border-gray-700 p-4 rounded-lg">
+          <h3 className="text-yellow-400 font-semibold mb-2 text-sm">Credenciales de prueba:</h3>
+          <p className="text-gray-300 text-xs">Usuario: <span className="text-green-400 font-mono">juan.perez@example.com</span></p>
+          <p className="text-gray-300 text-xs">Contraseña: <span className="text-green-400 font-mono">secure123</span></p>
         </div>
 
-        {/* Credenciales de prueba */}
-        <div className="mt-8 p-4 bg-gray-800/50 border border-yellow-500/30 rounded-lg">
-          <p className="text-sm text-yellow-400 mb-2 font-semibold flex items-center">
-            <span className="mr-2">🔑</span>
-            Credenciales de prueba:
-          </p>
-          <div className="text-sm text-gray-300 space-y-1">
-            <p><span className="text-green-400">Email:</span> juan.perez@example.com</p>
-            <p><span className="text-green-400">Contraseña:</span> secure123</p>
-          </div>
-        </div>
+        {/* Botón volver */}
+        <button
+          onClick={() => onNavigate('home')}
+          className="w-full text-gray-400 hover:text-white px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 text-sm"
+        >
+          ← Volver al inicio
+        </button>
       </div>
     </div>
   );
