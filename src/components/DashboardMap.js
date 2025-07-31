@@ -1,318 +1,167 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import DashboardOverview from './DashboardOverview';
+import DashboardBilling from './DashboardBilling';
+import DashboardSettings from './DashboardSettings';
+import LayoutHeader from './LayoutHeader';
+import DashboardController from '../controllers/DashboardController';
 
-const DashboardMap = ({ devices = [] }) => {
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const attemptsRef = useRef(0);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [error, setError] = useState(null);
-  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+const DashboardPage = ({ user, onLogout = () => {} }) => {
+  const [activeSection, setActiveSection] = useState('overview');
+  const [dashboardController, setDashboardController] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    console.log('🔄 useEffect ejecutándose...');
-    console.log('🔑 API Key:', apiKey ? 'Disponible' : 'No disponible');
+    const controller = new DashboardController();
+    setDashboardController(controller);
+  }, []);
 
-    if (!apiKey) {
-      setError('API Key no configurada');
-      return;
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'overview':
+        return <DashboardOverview dashboardController={dashboardController} />;
+      case 'billing':
+        return <DashboardBilling dashboardController={dashboardController} />;
+      case 'settings':
+        return <DashboardSettings />;
+      default:
+        return <DashboardOverview dashboardController={dashboardController} />;
     }
+  };
 
-    // Evitar ejecuciones múltiples
-    if (mapInstanceRef.current) {
-      console.log('📌 Mapa ya creado, evitando duplicación');
-      return;
-    }
+  const menuItems = [
+    { id: 'overview', name: 'Resumen', icon: '📊' },
+    { id: 'billing', name: 'Facturación', icon: '💰' },
+    { id: 'settings', name: 'Configuración', icon: '⚙️' }
+  ];
 
-    // Función para inicializar el mapa
-    const initializeMap = () => {
-      attemptsRef.current++;
-      console.log('🗺️ initializeMap ejecutándose... Intento:', attemptsRef.current);
-      console.log('📍 mapRef.current:', mapRef.current);
-      console.log('🌐 window.google:', !!window.google);
-      
-      // Debug adicional del DOM
-      console.log('🔍 Debug del DOM:');
-      console.log('  - document.readyState:', document.readyState);
-      console.log('  - Elementos con ref en DOM:', document.querySelectorAll('[data-map-ref]').length);
-      
-      // Buscar el elemento por otros medios
-      const mapElements = document.querySelectorAll('[data-map-ref="dashboard"]');
-      console.log('  - Elementos encontrados por data-attribute:', mapElements.length);
-      
-      if (mapElements.length > 0) {
-        console.log('  - Usando elemento encontrado por data-attribute');
-        mapRef.current = mapElements[0];
-      }
+  return (
+    <div className="min-h-screen bg-black flex">
+      {/* Sidebar */}
+      <div className={`bg-gray-900 border-r border-green-500/30 transition-all duration-300 ${
+        sidebarOpen ? 'w-64' : 'w-20'
+      } flex flex-col`}>
+        {/* Logo y Toggle */}
+        <div className="p-4 border-b border-green-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="EnerSecure" 
+                className="w-10 h-10 object-contain"
+              />
+              {sidebarOpen && (
+                <div className="ml-3">
+                  <h2 className="text-green-400 font-bold text-lg">EnerSecure</h2>
+                  <p className="text-gray-400 text-xs">Panel de Control</p>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-gray-400 hover:text-green-400 transition-colors p-1"
+            >
+              {sidebarOpen ? '◀' : '▶'}
+            </button>
+          </div>
+        </div>
 
-      // Verificar el elemento del DOM
-      if (!mapRef.current) {
-        console.log('❌ mapRef.current es null');
-        
-        // Máximo 15 intentos (aumenté el límite)
-        if (attemptsRef.current < 15) {
-          console.log('🔄 Reintentando en 500ms...');
-          setTimeout(initializeMap, 500); // Aumenté el tiempo
-          return;
-        } else {
-          console.log('❌ Máximo de intentos alcanzado');
-          setError('No se pudo encontrar el elemento del mapa después de varios intentos');
-          return;
-        }
-      }
-
-      // Verificar que el elemento esté en el DOM
-      if (!document.body.contains(mapRef.current)) {
-        console.log('❌ Elemento no está en el DOM');
-        if (attemptsRef.current < 10) {
-          setTimeout(initializeMap, 300);
-          return;
-        } else {
-          setError('El elemento del mapa no está en el DOM');
-          return;
-        }
-      }
-
-      // Verificar dimensiones
-      const rect = mapRef.current.getBoundingClientRect();
-      console.log('✅ Elemento encontrado, dimensiones:', {
-        width: rect.width,
-        height: rect.height,
-        top: rect.top,
-        left: rect.left
-      });
-
-      if (rect.width === 0 || rect.height === 0) {
-        console.log('❌ Elemento sin dimensiones válidas');
-        if (attemptsRef.current < 10) {
-          setTimeout(initializeMap, 300);
-          return;
-        } else {
-          setError('El elemento del mapa no tiene dimensiones válidas');
-          return;
-        }
-      }
-
-      try {
-        console.log('🚀 Creando instancia del mapa...');
-        
-        // Crear el mapa
-        const map = new window.google.maps.Map(mapRef.current, {
-          center: { lat: 4.6097, lng: -74.0817 }, // Bogotá
-          zoom: 11,
-          mapTypeId: window.google.maps.MapTypeId.ROADMAP
-        });
-
-        // Guardar referencia para evitar recreaciones
-        mapInstanceRef.current = map;
-
-        // Datos de prueba
-        const sampleDevices = [
-          { id: 1, lat: 4.6097, lng: -74.0817, name: 'Panel Solar Centro', type: 'solar', status: 'active' },
-          { id: 2, lat: 4.6511, lng: -74.0472, name: 'Turbina Norte', type: 'wind', status: 'active' },
-          { id: 3, lat: 4.5981, lng: -74.0758, name: 'Panel Solar Sur', type: 'solar', status: 'maintenance' }
-        ];
-
-        // Agregar marcadores con InfoWindows
-        sampleDevices.forEach(device => {
-          const marker = new window.google.maps.Marker({
-            position: { lat: device.lat, lng: device.lng },
-            map: map,
-            title: device.name
-          });
-
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div style="padding: 12px; font-family: Arial, sans-serif; max-width: 200px;">
-                <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 16px; font-weight: bold;">${device.name}</h3>
-                <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">
-                  <strong>Tipo:</strong> ${device.type === 'solar' ? 'Panel Solar' : 'Turbina Eólica'}
+        {/* Usuario */}
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-yellow-500 rounded-full flex items-center justify-center text-black font-bold">
+              {user?.first_name?.charAt(0) || 'U'}
+            </div>
+            {sidebarOpen && (
+              <div className="ml-3">
+                <p className="text-white font-medium">
+                  {user?.first_name} {user?.last_name}
                 </p>
-                <p style="margin: 0; color: ${device.status === 'active' ? '#059669' : '#d97706'}; font-size: 14px; font-weight: bold;">
-                  <strong>Estado:</strong> ${device.status === 'active' ? 'Activo' : 'Mantenimiento'}
-                </p>
+                <p className="text-gray-400 text-sm">{user?.email}</p>
               </div>
-            `
-          });
+            )}
+          </div>
+        </div>
 
-          marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-          });
-        });
+        {/* Navegación */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {menuItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
+                    activeSection === item.id
+                      ? 'bg-gradient-to-r from-green-500/20 to-yellow-500/20 border border-green-500/30 text-green-400'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  {sidebarOpen && (
+                    <span className="ml-3 font-medium">{item.name}</span>
+                  )}
+                  {activeSection === item.id && (
+                    <div className="ml-auto w-2 h-2 bg-green-400 rounded-full"></div>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        console.log('🎉 Mapa creado exitosamente con', sampleDevices.length, 'dispositivos');
-        setMapLoaded(true);
-        setError(null);
+        {/* Estado del sistema */}
+        <div className="p-4 border-t border-gray-700">
+          <div className="flex items-center">
+            <div className="relative">
+              <span className="h-3 w-3 bg-green-400 rounded-full animate-pulse"></span>
+              <span className="absolute top-0 left-0 h-3 w-3 bg-green-400 rounded-full animate-ping opacity-20"></span>
+            </div>
+            {sidebarOpen && (
+              <div className="ml-3">
+                <p className="text-sm text-green-400 font-medium">Sistema Online</p>
+                <p className="text-xs text-gray-500">Todos los servicios operativos</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      } catch (err) {
-        console.error('💥 Error creando mapa:', err);
-        setError('Error al crear el mapa: ' + err.message);
-      }
-    };
-
-    // Función para cargar Google Maps
-    const loadGoogleMaps = () => {
-      // Si ya está cargado
-      if (window.google && window.google.maps) {
-        console.log('📋 Google Maps ya está disponible');
-        setTimeout(initializeMap, 500); // Dar tiempo para que el DOM se renderice
-        return;
-      }
-
-      console.log('📥 Cargando script de Google Maps...');
-      
-      // Verificar si ya hay un script cargándose
-      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-      if (existingScript) {
-        console.log('� Script ya existe, esperando...');
-        const checkLoaded = () => {
-          if (window.google && window.google.maps) {
-            setTimeout(initializeMap, 500);
-          } else {
-            setTimeout(checkLoaded, 200);
-          }
-        };
-        checkLoaded();
-        return;
-      }
-
-      const script = document.createElement('script');
-      const callbackName = 'initGoogleMapDashboard' + Date.now();
-      
-      // Callback global
-      window[callbackName] = () => {
-        console.log('🎯 Google Maps script cargado exitosamente');
-        delete window[callbackName];
-        setTimeout(initializeMap, 500);
-      };
-
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${callbackName}&loading=async`;
-      script.async = true;
-      script.defer = true;
-      
-      script.onerror = () => {
-        console.error('💥 Error al cargar Google Maps script');
-        setError('No se pudo cargar Google Maps');
-        delete window[callbackName];
-      };
-
-      document.head.appendChild(script);
-    };
-
-    // Resetear contador de intentos
-    attemptsRef.current = 0;
-    
-    // Iniciar la carga
-    loadGoogleMaps();
-
-    return () => {
-      // Cleanup al desmontar
-      attemptsRef.current = 0;
-    };
-  }, [apiKey]); // Solo depender de apiKey
-
-  // Mostrar error
-  if (error) {
-    return (
-      <div className="w-full h-96 bg-red-50 border-2 border-red-200 rounded-lg flex items-center justify-center">
-        <div className="text-center p-6">
-          <div className="text-red-500 text-2xl mb-3">🗺️❌</div>
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Error en el Mapa</h3>
-          <p className="text-red-700 mb-3">{error}</p>
-          <p className="text-sm text-red-600">
-            API Key: {apiKey ? `${apiKey.substring(0, 12)}...` : 'No configurada'}
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+        {/* Logout */}
+        <div className="p-4 border-t border-red-500/20">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-all duration-200"
           >
-            🔄 Recargar Página
+            <span className="text-xl">🚪</span>
+            {sidebarOpen && (
+              <span className="ml-3 font-medium">Cerrar Sesión</span>
+            )}
           </button>
         </div>
       </div>
-    );
-  }
 
-  // Mostrar cargando
-  if (!mapLoaded) {
-    return (
-      <div className="w-full">
-        <div className="w-full h-96 bg-blue-50 border-2 border-blue-200 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">Cargando Mapa</h3>
-            <p className="text-blue-600">Preparando ubicaciones de dispositivos...</p>
-            <p className="text-sm text-blue-500 mt-2">Intento: {attemptsRef.current}/10</p>
-          </div>
-        </div>
-        
-        {/* Elemento del mapa siempre presente */}
-        <div className="w-full h-0 overflow-hidden">
-          <div 
-            ref={mapRef} 
-            data-map-ref="dashboard"
-            className="w-full h-96"
-            style={{ 
-              minHeight: '384px',
-              visibility: 'hidden',
-              position: 'absolute',
-              top: '-9999px'
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Mostrar mapa
-  return (
-    <div className="w-full">
-      {/* Header de éxito */}
-      <div className="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="text-green-600 text-xl mr-3">✅</span>
-            <div>
-              <h3 className="font-semibold text-green-800">Mapa Cargado Exitosamente</h3>
-              <p className="text-sm text-green-600">3 dispositivos encontrados en Bogotá</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-700">Activo</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-              <span className="text-gray-700">Mantenimiento</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Instrucciones */}
-      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-        <div className="flex items-center text-sm text-gray-600">
-          <span className="mr-2">💡</span>
-          <span>Haz clic en los marcadores para ver información detallada de cada dispositivo</span>
-        </div>
-      </div>
-
-      {/* Contenedor del mapa */}
-      <div className="w-full h-96 rounded-lg overflow-hidden border-2 border-gray-300 shadow-lg bg-gray-100">
-        <div 
-          ref={mapRef} 
-          data-map-ref="dashboard"
-          className="w-full h-full"
-          style={{ minHeight: '384px' }}
+      {/* Contenido Principal */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <LayoutHeader 
+          user={user} 
+          activeSection={activeSection}
+          onLogout={onLogout}
         />
+
+        {/* Contenido */}
+        <main className="flex-1 overflow-auto">
+          {renderActiveSection()}
+        </main>
       </div>
 
-      {/* Footer con información */}
-      <div className="mt-4 text-sm text-gray-500 text-center">
-        <p>📍 Mostrando dispositivos de energía renovable en Bogotá, Colombia</p>
-      </div>
+      {/* Overlay para móvil */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
-export default DashboardMap;
+export default DashboardPage;
