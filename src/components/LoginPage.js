@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import UserModel from '../models/UserModel';
+import { authService } from '../services/authService';
 
 const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -13,12 +13,16 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
     setError('');
     
     try {
-      const user = await UserModel.fetchUser(username, password);
-      if (user) {
-        onLogin(user);
+      const result = await authService.login(email, password);
+      
+      if (result.success) {
+        onLogin(result.user);
+      } else {
+        setError(result.error || 'Credenciales incorrectas');
       }
     } catch (err) {
-      setError(err.message || 'Error de conexión. Intenta nuevamente.');
+      setError('Error de conexión. Verifica que el servidor esté ejecutándose.');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
@@ -31,7 +35,17 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
         {/* Logo y título */}
         <div className="text-center">
           <div className="mx-auto mb-6 flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-2xl">
+            <img 
+              src="/logo_enersecure.png" 
+              alt="EnerSecure S.A.S. Logo" 
+              className="w-16 h-16 object-contain hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                // Fallback al logo con gradiente si la imagen no carga
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-2xl" style={{ display: 'none' }}>
               <span className="text-black font-bold text-2xl">🔋</span>
             </div>
           </div>
@@ -46,27 +60,27 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
           <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 p-6 sm:p-8 rounded-xl shadow-2xl">
             <div className="space-y-4">
               
-              {/* Campo Usuario */}
+              {/* Campo Email */}
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-                  Usuario
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  📧 Correo Electrónico
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
                   required
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200"
-                  placeholder="Ingresa tu usuario"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="juan.perez@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
               {/* Campo Contraseña */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                  Contraseña
+                  🔒 Contraseña
                 </label>
                 <input
                   id="password"
@@ -74,7 +88,7 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
                   type="password"
                   required
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200"
-                  placeholder="Ingresa tu contraseña"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -82,7 +96,8 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
 
               {/* Mensaje de error */}
               {error && (
-                <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center">
+                  <span className="mr-2">⚠️</span>
                   {error}
                 </div>
               )}
@@ -99,27 +114,45 @@ const LoginPage = ({ onLogin = () => {}, onNavigate = () => {} }) => {
                     Iniciando sesión...
                   </div>
                 ) : (
-                  'Iniciar Sesión'
+                  '🚀 Iniciar Sesión'
                 )}
               </button>
             </div>
           </div>
         </form>
 
-        {/* Información de prueba */}
+        {/* Información de API */}
         <div className="bg-gray-900/50 border border-gray-700 p-4 rounded-lg">
-          <h3 className="text-yellow-400 font-semibold mb-2 text-sm">Credenciales de prueba:</h3>
-          <p className="text-gray-300 text-xs">Usuario: <span className="text-green-400 font-mono">juan.perez@example.com</span></p>
-          <p className="text-gray-300 text-xs">Contraseña: <span className="text-green-400 font-mono">secure123</span></p>
+          <h3 className="text-blue-400 font-semibold mb-2 text-sm flex items-center">
+            <span className="mr-2">🌐</span>
+            Credenciales de prueba:
+          </h3>
+          <p className="text-gray-300 text-xs mb-2">
+            Usuario: <span className="text-green-400 font-mono">juan.perez@example.com</span>
+          </p>
+          <p className="text-gray-300 text-xs mb-2">
+            Contraseña: <span className="text-green-400 font-mono">secure123</span>
+          </p>
         </div>
 
-        {/* Botón volver */}
-        <button
-          onClick={() => onNavigate('home')}
-          className="w-full text-gray-400 hover:text-white px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 text-sm"
-        >
-          ← Volver al inicio
-        </button>
+        {/* Enlaces adicionales */}
+        <div className="flex flex-col space-y-3">
+          <button
+            onClick={() => onNavigate('register')}
+            className="w-full text-yellow-400 hover:text-yellow-300 px-4 py-2 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all duration-200 text-sm flex items-center justify-center"
+          >
+            <span className="mr-2">👤</span>
+            ¿No tienes cuenta? Regístrate
+          </button>
+          
+          <button
+            onClick={() => onNavigate('home')}
+            className="w-full text-gray-400 hover:text-white px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 text-sm flex items-center justify-center"
+          >
+            <span className="mr-2">←</span>
+            Volver al inicio
+          </button>
+        </div>
       </div>
     </div>
   );
