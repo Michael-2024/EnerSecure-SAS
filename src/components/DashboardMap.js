@@ -4,6 +4,7 @@ import DashboardBilling from './DashboardBilling';
 import DashboardSettings from './DashboardSettings';
 import LayoutHeader from './LayoutHeader';
 import DashboardController from '../controllers/DashboardController';
+import DashboardMap from './DashboardMap';
 
 const DashboardPage = ({ user, onLogout = () => {} }) => {
   const [activeSection, setActiveSection] = useState('overview');
@@ -23,6 +24,8 @@ const DashboardPage = ({ user, onLogout = () => {} }) => {
         return <DashboardBilling dashboardController={dashboardController} />;
       case 'settings':
         return <DashboardSettings />;
+      case 'map':
+        return <DashboardMap />;
       default:
         return <DashboardOverview dashboardController={dashboardController} />;
     }
@@ -31,7 +34,8 @@ const DashboardPage = ({ user, onLogout = () => {} }) => {
   const menuItems = [
     { id: 'overview', name: 'Resumen', icon: '📊' },
     { id: 'billing', name: 'Facturación', icon: '💰' },
-    { id: 'settings', name: 'Configuración', icon: '⚙️' }
+    { id: 'settings', name: 'Configuración', icon: '⚙️' },
+    { id: 'map', name: 'Mapa', icon: '🗺️' }
   ];
 
   return (

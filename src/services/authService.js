@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.56.102:8080/api/v1/public';
+const API_BASE_URL = 'http://192.168.10.32:8080/api/v1/public';
 
 export const authService = {
   // Login de usuario

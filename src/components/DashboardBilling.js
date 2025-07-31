@@ -66,7 +66,7 @@ const DashboardBilling = ({ dashboardController = null }) => {
             <span className="mr-2">⏰</span>
             Facturas Pendientes
           </h2>
-          <p className="text-3xl font-bold text-white">3</p>
+          <p className="text-3xl font-bold text-white">1</p>
           <div className="mt-2">
             <span className="inline-block bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium">
               Próximo vencimiento: 15 días
@@ -79,7 +79,7 @@ const DashboardBilling = ({ dashboardController = null }) => {
             <span className="mr-2">✅</span>
             Facturas Pagadas
           </h2>
-          <p className="text-3xl font-bold text-white">8</p>
+          <p className="text-3xl font-bold text-white">5</p>
           <div className="mt-2">
             <span className="inline-block bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
               100% al día este mes
